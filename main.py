@@ -30,7 +30,7 @@ while True:
     keypoints = result.keypoints.xy.cpu().numpy().astype("uint32")
 
     mid_points = [get_midpoint(bbox) for bbox in bboxes]
-    cluster, index = cluster_points(mid_points, 200)
+    cluster, index = cluster_points(mid_points, 180)
 
     filtered_index = []
     for c_point, i in zip(cluster, index):
@@ -40,6 +40,7 @@ while True:
 
 
     potentail_voilence_kp = []
+    potentail_voilence_zone = []
     for idx_list in filtered_index:
         temp = []
         temp_kp = []
@@ -63,10 +64,12 @@ while True:
         potentail_voilence_kp.append(temp_kp)
 
         t = np.int32(temp)
-        x1 = np.min(t[:, 0])
-        y1 = np.min(t[:, 1])
-        x2 = np.max(t[:, 2])
-        y2 = np.max(t[:, 3])
+        x1 = np.min(t[:, 0]) -20
+        y1 = np.min(t[:, 1]) -20
+        x2 = np.max(t[:, 2]) +20
+        y2 = np.max(t[:, 3]) +20
+
+        potentail_voilence_zone.append([x1, y1, x2, y2])
 
         # draw the red rectangle highlighting potential volience area
         frame = cv2.putText(
@@ -110,20 +113,38 @@ while True:
         distances.append(distance)
 
 
-    for distance in distances:
+    for distance, pts in zip(distances, potentail_voilence_zone):
         distance = np.int32(distance)
+        x1, y1, x2, y2 = pts
         r_a_min, l_a_min, r_e_min = np.min(distance[:, 0]), np.min(distance[:, 1]), np.min(distance[:, 2])
         l_e_min, r_w_min, l_w_min = np.min(distance[:, 3]), np.min(distance[:, 4]), np.min(distance[:, 5])
 
+        frame = cv2.circle(frame, center=((x1+x2)//2, (y1+y2)//2), radius=20, color=(0, 0, 0), thickness=-1)
+
         if (
-            (r_a_min < 400 or l_a_min < 400) and
-            (r_e_min < 400 or l_e_min < 400) and 
-            (r_w_min < 1400 or l_w_min < 150) 
+            (r_a_min < 200 or l_a_min < 200) and
+            (r_e_min < 200 or l_e_min < 200)  
         ):
             if len(distance) <= 2:
-                print("Intensity Low")
+                frame = cv2.putText(
+                    frame, 
+                    "Intensity Low", 
+                    (x1 + abs(x1-x2)//2, abs(y2+20)), 
+                    fontFace=cv2.FONT_HERSHEY_COMPLEX_SMALL, 
+                    fontScale=1,  
+                    color=(255, 255, 0), 
+                    thickness=3
+                )
             else:
-                print("Intensity High")
+                frame = cv2.putText(
+                    frame, 
+                    "Intensity High", 
+                    (x1 + abs(x1-x2)//2, abs(y2+20)), 
+                    fontFace=cv2.FONT_HERSHEY_COMPLEX_SMALL, 
+                    fontScale=1,  
+                    color=(255, 255, 0), 
+                    thickness=3
+                )
         
     # frame = result.plot()
     cv2.imshow("results", cv2.resize(frame, (int(width//2), int(height//2))))
