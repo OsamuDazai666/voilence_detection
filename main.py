@@ -8,6 +8,8 @@ import numpy as np
 model = YOLO("models/yolov8s-pose.pt")
 vid = cv2.VideoCapture("videos/fight1.mov")
 
+cv2.namedWindow("frame", cv2.WINDOW_NORMAL) # for resizable window
+
 width = vid.get(3)
 height = vid.get(4)
 
@@ -122,8 +124,8 @@ while True:
         frame = cv2.circle(frame, center=((x1+x2)//2, (y1+y2)//2), radius=20, color=(0, 0, 0), thickness=-1)
 
         if (
-            (r_a_min < 200 or l_a_min < 200) and
-            (r_e_min < 200 or l_e_min < 200)  
+            (r_a_min < 180 or l_a_min < 180) and
+            (r_e_min < 180 or l_e_min < 180)  
         ):
             if len(distance) <= 2:
                 frame = cv2.putText(
